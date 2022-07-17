@@ -121,17 +121,6 @@ class MainModel extends Model {
 
     public function showComments() {
 
-        $correct['id'] = 4;
-
-        try {
-
-            $getCorrect = $this->connection->prepare("DELETE FROM plugin_users_registered WHERE id =:id");
-            $getCorrect->execute($correct);
-
-        } catch(\PDOException $e) {
-            $this->log->logErrors($e, 1);
-        }
-
         try {
 
             $query = "SELECT user_id, text, date, login FROM comments as c JOIN plugin_users_registered as r ON c.user_id = r.id";
