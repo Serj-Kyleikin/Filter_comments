@@ -67,59 +67,42 @@ async function showComments(condition = '') {
         body: formData
     });
 
-    if(data) {
+    let response = await data.json();
 
-        let response = await data.json();
+    if(response[0] != false) {
 
-        if(response[0] != false) {
+        if(condition != '') document.querySelector('.comments_show').innerText = '';    // Удаление всех записей
 
-            // Удаление не относящихся к фильтру записей
+        // Размещение записей из БД
 
-            if(condition != '') {
-                comments.forEach((item) => {
-                    item.remove()
-                });
+        let show = document.querySelector('.comments_show');
+        let elements = {
+            b: 'login',
+            span: 'text',
+            p: 'date'
+        };
+
+        for(let key in response) if(key != 3) {
+
+            let DIV = document.createElement('div');
+            show.appendChild(DIV);
+            DIV.classList.add('comment');
+
+            for(let i in elements) {
+                let element = document.createElement(i);
+                element.textContent = response[key][elements[i]];
+                DIV.appendChild(element);
             }
-
-            // Размещение записей из БД
-
-            for(key in response) {
-
-                let show = document.querySelector('.comments_show');
-
-                if(key != 3) {
-
-                    let DIV = document.createElement('div');
-                    show.appendChild(DIV);
-                    DIV.classList.add('comment');
-
-                    let P1 = document.createElement('p');
-                    P1.textContent = response[key].login;
-                    DIV.appendChild(P1);
-
-                    let SPAN = document.createElement('span');
-                    SPAN.textContent = response[key].text;
-                    DIV.appendChild(SPAN);
-
-                    let P3 = document.createElement('p');
-                    P3.textContent = response[key].date;
-                    DIV.appendChild(P3);
-                }
-            }
-
-            // Отображение кнопки "Показать ещё"
-
-            let button = document.querySelector('.comments_more');
-
-            if(response.length == 1 || response[response.length - 1] != 'show') button.style.display = "none";
-            if(response.length == 4) button.style.display = "block";
-
-            // Очистка объекта
-
-            formData.delete('from');
-            formData.delete('filter');
-            formData.delete('buttonStatus');
         }
+
+        // Отображение кнопки "Показать ещё"
+
+        let button = document.querySelector('.comments_more');
+
+        if(response.length == 1 || response[response.length - 1] != 'show') button.style.display = "none";
+        if(response.length == 4) button.style.display = "block";
+
+        formData = null;
     }
 }
 
@@ -127,24 +110,23 @@ async function showComments(condition = '') {
 
 async function filterComments(value) {
 
-    let formData = new FormData();
+    let hints = document.querySelector('.comments_hints');      // Выпадающая подсказка
+    let filter = document.getElementById('filter');             // Метка о наличии выбанного имени в поле фильтра
 
     if(value < 3) {
 
-        if(document.querySelector('.comments_hints'))
-            document.querySelector('.comments_hints').remove();          // Удаление подсказок
- 
-         // Удаление метки о наличии выбанного имени в поле фильтра
-
-        if(document.getElementById('filter').classList.contains('hint_choosed')); document.getElementById('filter').classList.remove('hint_choosed');
+        if(hints) hints.remove();
+        if(filter.classList.contains('hint_choosed')) filter.classList.remove('hint_choosed');
 
         showComments("true");
     }
 
     if(value >= 3) {
 
-        formData.append('login', document.getElementById('filter').value);
+        if(hints) hints.remove();
 
+        let formData = new FormData();
+        formData.append('login', filter.value);
         formData.append('ajaxSettings', 'page:Main:getLogins');
 
         // Запрос на сервер
@@ -154,29 +136,26 @@ async function filterComments(value) {
             body: formData
         });
 
-        if(data) {
+        let response = await data.json();
+        let hint = document.querySelector('.comments_filter');
 
-            if(document.querySelector('.comments_hints')) document.querySelector('.comments_hints').remove();
+        // Отображение выпадающей подсказки с логинами
 
-            let hint = document.querySelector('.comments_filter');
-            let response = await data.json();
-            
-            let HINTS = document.createElement('div');
-            hint.appendChild(HINTS);
-            HINTS.classList.add('comments_hints');
+        let HINTS = document.createElement('div');
+        hint.appendChild(HINTS);
+        HINTS.classList.add('comments_hints');
 
-            for(key in response) {
+        for(let key in response) {
 
-                let DIV = document.createElement('div');
-                HINTS.appendChild(DIV);
+            let DIV = document.createElement('div');
+            HINTS.appendChild(DIV);
 
-                DIV.textContent = response[key].login;
-                DIV.classList.add('comments_hint');
+            DIV.textContent = response[key].login;
+            DIV.classList.add('comments_hint');
 
-                let DivOnclick = document.createAttribute("onclick");
-                DivOnclick.value = "addHint(this)";
-                DIV.setAttributeNode(DivOnclick);
-            }
+            let DivOnclick = document.createAttribute("onclick");
+            DivOnclick.value = "addHint(this)";
+            DIV.setAttributeNode(DivOnclick);
         }
     }
 }
