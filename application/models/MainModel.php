@@ -15,7 +15,7 @@ class MainModel extends Model {
 
         try {
 
-            $getInfo = $this->connection->prepare('SELECT user_id, text, date, login FROM comments as c JOIN plugin_users_registered as r ON c.user_id = r.id ORDER BY date DESC LIMIT 0,4');
+            $getInfo = $this->connection->prepare('SELECT c.user_id as cid, p.user_id as pid, text, date, name FROM comments as c JOIN plugin_users_personal as p ON c.user_id = p.user_id ORDER BY date DESC LIMIT 0,4');
             $getInfo->execute();
             $result = $getInfo->fetchAll(PDO::FETCH_ASSOC);
 

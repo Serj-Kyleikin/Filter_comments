@@ -15,11 +15,11 @@ class MainModel extends Model {
 
         $secret = substr(explode('_', $_COOKIE['user'])[0], 0, -2);
         $key = (int)$secret / 3;
-        $id['id'] =  substr($key, 2, -2);
+        $id['user_id'] =  substr($key, 2, -2);
 
         try {
 
-            $getUser = $this->connection->prepare('SELECT login FROM plugin_users_registered WHERE id =:id');
+            $getUser = $this->connection->prepare('SELECT name FROM plugin_users_personal WHERE user_id =:user_id');
             $getUser->execute($id);
             $user = $getUser->fetch(PDO::FETCH_ASSOC);
 
@@ -30,7 +30,7 @@ class MainModel extends Model {
         // Добавление данных в БД
 
         $data['text'] = htmlspecialchars($_POST['text']);
-        $data['user_id'] = $id['id'];
+        $data['user_id'] = $id['user_id'];
 
         try {
 
@@ -46,7 +46,7 @@ class MainModel extends Model {
         }
 
         $data['date'] = date("Y-m-d");
-        $data['login'] = $user['login'];
+        $data['name'] = $user['name'];
 
         $this->cache->delete('page_main.tmp');
 
@@ -59,11 +59,11 @@ class MainModel extends Model {
 
         // Точное совпадение логина
 
-        $correct['login'] = htmlspecialchars($_POST['login']);
+        $correct['name'] = htmlspecialchars($_POST['name']);
 
         try {
 
-            $getCorrect = $this->connection->prepare("SELECT user_id, login FROM comments as c JOIN plugin_users_registered as r ON r.id = c.user_id WHERE login =:login");
+            $getCorrect = $this->connection->prepare("SELECT c.user_id as cid, p.user_id as pid, name FROM comments as c JOIN plugin_users_personal as p ON c.user_id = p.user_id WHERE name =:name");
             $getCorrect->execute($correct);
             $rowCorrect = $getCorrect->fetch(PDO::FETCH_ASSOC);
 
@@ -71,39 +71,39 @@ class MainModel extends Model {
             $this->log->logErrors($e, 1);
         }
 
-        $response = (isset($rowCorrect['login'])) ? $rowCorrect : false;
+        $response = (isset($rowCorrect['name'])) ? $rowCorrect : false;
 
         // Логин внутри длинных логинов
 
-        $data['login'] = "^" . htmlspecialchars($_POST['login']);
+        $data['name'] = "^" . htmlspecialchars($_POST['name']);
 
         // Получаем авторов с максимальным количеством комментариев к данной статье
 
         try {
 
-            $getLogin = $this->connection->prepare("SELECT user_id, login, count(user_id) as n FROM comments as c JOIN plugin_users_registered as r ON  c.user_id = r.id WHERE login REGEXP :login GROUP BY login ORDER BY n DESC LIMIT 0,3");
-            $getLogin->execute($data);
+            $getName = $this->connection->prepare("SELECT c.user_id as cid, p.user_id as pid, name, count(c.user_id) as n FROM comments as c JOIN plugin_users_personal as p ON c.user_id = p.user_id WHERE name REGEXP :name GROUP BY name ORDER BY n DESC LIMIT 0,3");
+            $getName->execute($data);
 
-            $row = $getLogin->fetchAll(PDO::FETCH_ASSOC);
+            $row = $getName->fetchAll(PDO::FETCH_ASSOC);
 
         } catch(\PDOException $e) {
             $this->log->logErrors($e, 1);
         }
 
-        if($response == false) $response = (isset($row[0]['login'])) ? $row : false; 
+        if($response == false) $response = (isset($row[0]['name'])) ? $row : false; 
         else {
 
-            if(isset($row[0]['login']) and count($row) != 1) {
+            if(isset($row[0]['name']) and count($row) != 1) {
 
                 // Поиск точного совпадения логина среди логинов с наибольшим количеством постов
 
                 $result = array_filter($row[0], function($v) use ($response) {
-                    return $v == $response['login'];
+                    return $v == $response['name'];
                 });
 
                 // Если не найдено, то добавляется в подборку (актуально для коротких логинов, с малым количеством комментариев)
 
-                if(!isset($result['login'])) {
+                if(!isset($result['name'])) {
 
                     $row = array_reverse($row);
                     $row[] = $response;
@@ -111,7 +111,7 @@ class MainModel extends Model {
 
                 } else $response = $row;
 
-            } elseif(isset($row[0]['login']) and count($row) == 1) $response = $row;
+            } elseif(isset($row[0]['name']) and count($row) == 1) $response = $row;
         }
 
         echo json_encode($response);
@@ -123,13 +123,13 @@ class MainModel extends Model {
 
         try {
 
-            $query = "SELECT user_id, text, date, login FROM comments as c JOIN plugin_users_registered as r ON c.user_id = r.id";
-            if(isset($_POST['filter'])) $query .= " WHERE login = :login";      // Условие из фильтра
+            $query = "SELECT c.user_id as cid, p.user_id as pid, text, date, name FROM comments as c JOIN plugin_users_personal as p ON c.user_id = p.user_id";
+            if(isset($_POST['filter'])) $query .= " WHERE name = :name";      // Условие из фильтра
             $query .= " ORDER BY date DESC LIMIT :from,4";
 
             $getInfo = $this->connection->prepare($query);
             $getInfo->bindValue(':from', (int)$_POST['from'], PDO::PARAM_INT);
-            if(isset($_POST['filter'])) $getInfo->bindValue(':login', $_POST['filter']);
+            if(isset($_POST['filter'])) $getInfo->bindValue(':name', $_POST['filter']);
             $getInfo->execute();
 
             $result = $getInfo->fetchAll(PDO::FETCH_ASSOC);

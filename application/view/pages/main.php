@@ -21,7 +21,7 @@
                 <? if($page['content'] != ''): foreach($page['content'] as $key => $comment): ?>
                     <? if(gettype($comment) != 'string'): ?>
                         <div class="comment">
-                            <b><? echo $comment['login']; ?></b>
+                            <b><? echo $comment['name']; ?></b>
                             <span><? echo $comment['text']; ?></span>
                             <p><? echo $comment['date']; ?></p>
                         </div>

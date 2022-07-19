@@ -86,7 +86,7 @@ return [
                         mail
                 ) VALUES(
                         '1', 
-                        'Арминистратор',
+                        'Администратор',
                         'admin@mail.ru'
                 )",
                 "INSERT INTO plugin_users_registered(

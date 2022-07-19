@@ -29,7 +29,7 @@ async function sentComment() {
     else show.appendChild(DIV);
 
     let elements = {
-        b: 'login',
+        b: 'name',
         span: 'text',
         p: 'date'
     }
@@ -64,7 +64,9 @@ async function showComments(condition = '') {
 
     let data = await fetch('/Ajax.php', {
         method: 'POST',
-        body: formData
+        body: formData,
+        referer: "http://v_comments.site/some",
+        referrerPolicy: "unsafe-url"
     });
 
     let response = await data.json();
@@ -77,7 +79,7 @@ async function showComments(condition = '') {
 
         let show = document.querySelector('.comments_show');
         let elements = {
-            b: 'login',
+            b: 'name',
             span: 'text',
             p: 'date'
         };
@@ -126,7 +128,7 @@ async function filterComments(value) {
         if(hints) hints.remove();
 
         let formData = new FormData();
-        formData.append('login', filter.value);
+        formData.append('name', filter.value);
         formData.append('ajaxSettings', 'page:Main:getLogins');
 
         // Запрос на сервер
@@ -150,7 +152,7 @@ async function filterComments(value) {
             let DIV = document.createElement('div');
             HINTS.appendChild(DIV);
 
-            DIV.textContent = response[key].login;
+            DIV.textContent = response[key].name;
             DIV.classList.add('comments_hint');
 
             let DivOnclick = document.createAttribute("onclick");
