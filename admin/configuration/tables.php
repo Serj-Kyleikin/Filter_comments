@@ -31,14 +31,14 @@ return [
             password_hash VARCHAR(100)
         ) ENGINE = InnoDB;",
         "CREATE TABLE IF NOT EXISTS plugin_users_secure (
-            user_id INTEGER(100) UNSIGNED NOT NULL, 
+            user_id INTEGER(10) UNSIGNED NOT NULL, 
             secret VARCHAR(30), 
             attempts TINYINT(1) NULL, 
             date TIMESTAMP NULL, 
             FOREIGN KEY (user_id) REFERENCES plugin_users_registered (id) ON DELETE CASCADE ON UPDATE CASCADE
         ) ENGINE = InnoDB;",
         "CREATE TABLE IF NOT EXISTS plugin_users_personal (
-            user_id INTEGER(100) UNSIGNED NOT NULL, 
+            user_id INTEGER(10) UNSIGNED NOT NULL, 
             name NVARCHAR(50), 
             mail VARCHAR(30), 
             FOREIGN KEY (user_id) REFERENCES plugin_users_registered (id) ON DELETE CASCADE ON UPDATE CASCADE
@@ -46,7 +46,7 @@ return [
     ],
     'content' => [
         "CREATE TABLE IF NOT EXISTS comments (
-            user_id INTEGER(100), 
+            user_id INTEGER(10), 
             text NVARCHAR(100), 
             date TIMESTAMP
         ) ENGINE = MYISAM;"
