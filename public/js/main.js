@@ -64,9 +64,7 @@ async function showComments(condition = '') {
 
     let data = await fetch('/Ajax.php', {
         method: 'POST',
-        body: formData,
-        referer: "http://v_comments.site/some",
-        referrerPolicy: "unsafe-url"
+        body: formData
     });
 
     let response = await data.json();
