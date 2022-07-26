@@ -1,12 +1,15 @@
 // Добавление комментария
 
-async function sentComment() {
+async function sentComment(id) {
+
+    let article = document.querySelector('.article[data-article="'+id+'"]');
 
     let formData = new FormData();
 
-    let form = document.forms[0];
+    let form = document.forms['add_' + id];
     let text = form.elements.text;
     formData.append('text', text.value);
+    formData.append('id', id);
 
     formData.append('ajaxSettings', 'page:Main:sentComment');
 
@@ -19,43 +22,48 @@ async function sentComment() {
 
     let response = await data.json();
 
-    let DIV = document.createElement('div');
-    DIV.classList.add('comment');
+    if(response) {
 
-    let check = document.getElementsByClassName('comment')[0];  // Проверка первый ли это комментарий
-    let show = document.querySelector('.comments_show');
-
-    if(check) show.insertBefore(DIV,document.getElementsByClassName('comment')[0]);
-    else show.appendChild(DIV);
-
-    let elements = {
-        b: 'name',
-        span: 'text',
-        p: 'date'
+        let DIV = document.createElement('div');
+        DIV.classList.add('comment');
+    
+        let check = article.getElementsByClassName('comment')[0];       // Проверка первый ли это комментарий
+        let show = article.querySelector('.comments_show');
+    
+        if(check) show.insertBefore(DIV,article.getElementsByClassName('comment')[0]);
+        else show.appendChild(DIV);
+    
+        let elements = {
+            b: 'name',
+            span: 'text',
+            p: 'date'
+        }
+    
+        for(let i in elements) {
+            let element = document.createElement(i);
+            element.textContent = response[elements[i]];
+            DIV.appendChild(element);
+        }
+    
+        text.value = '';
+        formData = null;
     }
-
-    for(let i in elements) {
-        let element = document.createElement(i);
-        element.textContent = response[elements[i]];
-        DIV.appendChild(element);
-    }
-
-    text.value = '';
-    formData = null;
 }
 
 // Кнопка показать ещё + показать для выбранного фильтра (По условию condition)
 
-async function showComments(condition = '') {
+async function showComments(id, condition = '') {
 
     let formData = new FormData();
 
-    let comments = document.querySelectorAll('.comment');
+    let article = document.querySelector('.article[data-article="'+id+'"]');
+    let comments = article.querySelectorAll('.comment');
 
     let from = (condition != '') ? 0 : comments.length;     // С какой записи извлечение
     formData.append('from', from);
+    formData.append('id', id);
 
-    let filter = document.querySelector('.hint_choosed');   // При наличии выбранного варианта в фильтре
+    let filter = article.querySelector('.hint_choosed');   // При наличии выбранного варианта в фильтре
     if(filter) formData.append('filter', filter.value);
 
     formData.append('ajaxSettings', 'page:Main:showComments');
@@ -71,11 +79,11 @@ async function showComments(condition = '') {
 
     if(response[0] != false) {
 
-        if(condition != '') document.querySelector('.comments_show').innerText = '';    // Удаление всех записей
+        if(condition != '') article.querySelector('.comments_show').innerText = '';    // Удаление всех записей
 
         // Размещение записей из БД
 
-        let show = document.querySelector('.comments_show');
+        let show = article.querySelector('.comments_show');
         let elements = {
             b: 'name',
             span: 'text',
@@ -97,7 +105,7 @@ async function showComments(condition = '') {
 
         // Отображение кнопки "Показать ещё"
 
-        let button = document.querySelector('.comments_more');
+        let button = article.querySelector('.comments_more');
 
         if(response.length == 1 || response[response.length - 1] != 'show') button.style.display = "none";
         if(response.length == 4) button.style.display = "block";
@@ -108,25 +116,29 @@ async function showComments(condition = '') {
 
 // Текстовое поле ввода имени автора для фильтрации
 
-async function filterComments(value) {
+async function filterComments(id, value) {
 
-    let hints = document.querySelector('.comments_hints');      // Выпадающая подсказка
-    let filter = document.getElementById('filter');             // Метка о наличии выбанного имени в поле фильтра
+    let article = document.querySelector('.article[data-article="'+id+'"]');
 
-    if(value < 3) {
+    let hints = article.querySelector('.comments_hints');             // Выпадающая подсказка
+    let filter = document.getElementById('filter_' + id);             // Метка о наличии выбанного имени в поле фильтра
+
+    if(filter.hasAttribute('class') && value < 3) {
 
         if(hints) hints.remove();
         if(filter.classList.contains('hint_choosed')) filter.classList.remove('hint_choosed');
-
-        showComments("true");
+        if(value == 0) showComments(id, "true");
     }
 
     if(value >= 3) {
+
+        filter.className = 'process';
 
         if(hints) hints.remove();
 
         let formData = new FormData();
         formData.append('name', filter.value);
+        formData.append('id', id);
         formData.append('ajaxSettings', 'page:Main:getLogins');
 
         // Запрос на сервер
@@ -137,7 +149,7 @@ async function filterComments(value) {
         });
 
         let response = await data.json();
-        let hint = document.querySelector('.comments_filter');
+        let hint = article.querySelector('.comments_filter');
 
         // Отображение выпадающей подсказки с логинами
 
@@ -151,10 +163,10 @@ async function filterComments(value) {
             HINTS.appendChild(DIV);
 
             DIV.textContent = response[key].name;
-            DIV.classList.add('comments_hint');
+            DIV.className = 'comments_hint';
 
             let DivOnclick = document.createAttribute("onclick");
-            DivOnclick.value = "addHint(this)";
+            DivOnclick.value = 'addHint(' + id + ', this)';
             DIV.setAttributeNode(DivOnclick);
         }
     }
@@ -162,28 +174,31 @@ async function filterComments(value) {
 
 // Добавление имени автора из подсказки в текстовое поле фильтра
 
-function addHint(item) {
+function addHint(id, item) {
 
-    let filter = document.getElementById('filter');
+    let article = document.querySelector('.article[data-article="'+id+'"]');
+    let filter = document.getElementById('filter_' + id);
 
     filter.value = item.textContent;
     filter.classList.add('hint_choosed');
 
-    let check = document.querySelector('.comments_hints');
+    let check = article.querySelector('.comments_hints');
     if(check) check.remove();
 
-    showComments("true");
+    showComments(id, "true");
 }
 
 // Кнопка применить для фильтрации авторов
 
-function showFiltered() {
+function showFiltered(id) {
 
-    let input = document.getElementById('filter');
+    let article = document.querySelector('.article[data-article="'+id+'"]');
+
+    let input = document.getElementById('filter_' + id);
     if(!input.classList.contains('hint_choosed')) input.classList.add('hint_choosed');
 
-    let check = document.querySelector('.comments_hints');
+    let check = article.querySelector('.comments_hints');
     if(check) check.remove();
 
-    showComments("true");
+    showComments(id, "true");
 }

@@ -45,10 +45,17 @@ return [
         ) ENGINE = InnoDB;"
     ],
     'content' => [
+        "CREATE TABLE IF NOT EXISTS articles (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,  
+            text TEXT
+        );",
         "CREATE TABLE IF NOT EXISTS comments (
-            user_id INTEGER(10), 
+            user_id INTEGER(10) UNSIGNED NOT NULL, 
+            article_id INTEGER(10) UNSIGNED NOT NULL, 
             text NVARCHAR(100), 
-            date TIMESTAMP
-        ) ENGINE = MYISAM;"
+            date TIMESTAMP, 
+            FOREIGN KEY (user_id) REFERENCES plugin_users_registered (id) ON DELETE CASCADE ON UPDATE CASCADE, 
+            FOREIGN KEY (article_id) REFERENCES articles (id) ON DELETE CASCADE ON UPDATE CASCADE
+        );"
     ]
 ];

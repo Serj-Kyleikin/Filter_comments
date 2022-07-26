@@ -62,10 +62,13 @@ function logError($catch, $type, $show = true) {
 // Рекдирект
 
 function redirect($url) {
+
     if($url === true) header('location: /404.php');
-    elseif($url == 'exit') echo "<script>window.location.href = '/404.php';</script>";
+    elseif($url == 'insert') echo "window.location.href = '/404.php';";
+    elseif($url == 'script') echo "<script>window.location.href = '/404.php';</script>";
     else header('location: /' . $url);
-    exit;
+
+    if($url != 'insert') exit;
 }
 
 // Запуск маршрутизатора

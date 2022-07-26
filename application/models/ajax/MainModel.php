@@ -11,44 +11,50 @@ class MainModel extends Model {
 
     public function sentComment() {
 
-        // Получение пользователя
+        $id['user_id'] = $this->getID();           // ID пользователя
+        $id['article_id'] = $_POST['id'];
 
-        $secret = substr(explode('_', $_COOKIE['user'])[0], 0, -2);
-        $key = (int)$secret / 3;
-        $id['user_id'] =  substr($key, 2, -2);
+        if($_POST['text'] != '') {
 
-        try {
+            try {
 
-            $getUser = $this->connection->prepare('SELECT name FROM plugin_users_personal WHERE user_id =:user_id');
-            $getUser->execute($id);
-            $user = $getUser->fetch(PDO::FETCH_ASSOC);
+                $getUser = $this->connection->prepare('SELECT a.id, u.name FROM articles as a JOIN plugin_users_personal as u WHERE u.user_id =:user_id and a.id=:article_id ORDER BY a.id DESC, user_id LIMIT 1');
+                $getUser->execute($id);
+                $user = $getUser->fetch(PDO::FETCH_ASSOC);
 
-        } catch(\PDOException $e) {
-            $this->log->logErrors($e, 1);
-        }
+            } catch(\PDOException $e) {
+                $this->log->logErrors($e, 1);
+            }
 
-        // Добавление данных в БД
+            // Проверка на существование поста с таким id
 
-        $data['text'] = htmlspecialchars($_POST['text']);
-        $data['user_id'] = $id['user_id'];
+            if($user) {
 
-        try {
+                // Добавление данных в БД
 
-            $this->connection->beginTransaction();
-            $this->connection->exec("LOCK TABLES comments WRITE");
-            $insert = $this->connection->prepare("INSERT INTO comments(user_id, text, date) VALUES(:user_id, :text, now())");
-            $insert->execute($data);
-            $this->connection->commit();
-            $this->connection->exec("UNLOCK TABLES");
+                $data['text'] = htmlspecialchars($_POST['text']);
+                $data['user_id'] = $id['user_id'];
+                $data['article_id'] = $id['article_id'];
 
-        } catch(\PDOException $e) {
-            $this->log->logErrors($e, 1);
-        }
+                try {
 
-        $data['date'] = date("Y-m-d");
-        $data['name'] = $user['name'];
+                    $this->connection->beginTransaction();
+                    $this->connection->exec("LOCK TABLES comments WRITE");
+                    $insert = $this->connection->prepare("INSERT INTO comments(user_id, article_id, text, date) VALUES(:user_id, :article_id, :text, now())");
+                    $insert->execute($data);
+                    $this->connection->commit();
+                    $this->connection->exec("UNLOCK TABLES");
 
-        $this->cache->delete('page_main.tmp');
+                } catch(\PDOException $e) {
+                    $this->log->logErrors($e, 1);
+                }
+
+                $data['date'] = date("Y-m-d");
+                $data['name'] = $user['name'];
+
+            } else $data = 0;           // Подмена id поста
+
+        } else $data = 0;               // Подмена id формы
 
         echo json_encode($data);
     }
@@ -60,10 +66,11 @@ class MainModel extends Model {
         // Точное совпадение логина
 
         $correct['name'] = htmlspecialchars($_POST['name']);
+        $correct['article_id'] = $_POST['id'];
 
         try {
 
-            $getCorrect = $this->connection->prepare("SELECT c.user_id as cid, p.user_id as pid, name FROM comments as c JOIN plugin_users_personal as p ON c.user_id = p.user_id WHERE name =:name");
+            $getCorrect = $this->connection->prepare("SELECT c.user_id as cid, p.user_id as pid, name FROM comments as c JOIN plugin_users_personal as p ON c.user_id = p.user_id WHERE c.article_id =:article_id and name =:name ORDER BY c.article_id DESC, name ASC LIMIT 1");
             $getCorrect->execute($correct);
             $rowCorrect = $getCorrect->fetch(PDO::FETCH_ASSOC);
 
@@ -76,12 +83,13 @@ class MainModel extends Model {
         // Логин внутри длинных логинов
 
         $data['name'] = "^" . htmlspecialchars($_POST['name']);
+        $data['article_id'] = $_POST['id'];
 
         // Получаем авторов с максимальным количеством комментариев к данной статье
 
         try {
 
-            $getName = $this->connection->prepare("SELECT c.user_id as cid, p.user_id as pid, name, count(c.user_id) as n FROM comments as c JOIN plugin_users_personal as p ON c.user_id = p.user_id WHERE name REGEXP :name GROUP BY name ORDER BY n DESC LIMIT 0,3");
+            $getName = $this->connection->prepare("SELECT c.user_id as cid, p.user_id as pid, name, count(c.user_id) as n FROM comments as c JOIN plugin_users_personal as p ON c.user_id = p.user_id WHERE c.article_id =:article_id and name REGEXP :name GROUP BY name ORDER BY c.article_id DESC, name ASC, n DESC LIMIT 0,3");
             $getName->execute($data);
 
             $row = $getName->fetchAll(PDO::FETCH_ASSOC);
@@ -123,15 +131,17 @@ class MainModel extends Model {
 
         try {
 
-            $query = "SELECT c.user_id as cid, p.user_id as pid, text, date, name FROM comments as c JOIN plugin_users_personal as p ON c.user_id = p.user_id";
-            if(isset($_POST['filter'])) $query .= " WHERE name = :name";      // Условие из фильтра
-            $query .= " ORDER BY date DESC LIMIT :from,4";
+            $query = "SELECT c.user_id as cid, p.user_id as pid, text, date, name FROM comments as c JOIN plugin_users_personal as p ON c.user_id = p.user_id WHERE c.article_id =:article_id";
+            if(isset($_POST['filter'])) $query .= " and name = :name";      // Условие из фильтра
+            $query .= " ORDER BY c.article_id, date DESC LIMIT :from, 4";
 
             $getInfo = $this->connection->prepare($query);
+
+            $getInfo->bindValue(':article_id', $_POST['id']);
             $getInfo->bindValue(':from', (int)$_POST['from'], PDO::PARAM_INT);
             if(isset($_POST['filter'])) $getInfo->bindValue(':name', $_POST['filter']);
-            $getInfo->execute();
 
+            $getInfo->execute();
             $result = $getInfo->fetchAll(PDO::FETCH_ASSOC);
 
         } catch(\PDOException $e) {
