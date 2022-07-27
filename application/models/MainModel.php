@@ -29,7 +29,7 @@ class MainModel extends Model {
             logError($e, 1);
         }
 
-        // Проверка на последний пост
+        // Поиск первой статьи из БД в выдаче
 
         try {
 
