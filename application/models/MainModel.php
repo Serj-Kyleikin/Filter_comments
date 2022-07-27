@@ -33,7 +33,7 @@ class MainModel extends Model {
 
         try {
 
-            $getId = $this->connection->prepare('SELECT id FROM articles ORDER BY id DESC LIMIT 1');
+            $getId = $this->connection->prepare('SELECT id FROM articles ORDER BY id LIMIT 1');
             $getId->execute();
             $min = $getId->fetch(PDO::FETCH_ASSOC);
 
