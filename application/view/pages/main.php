@@ -1,7 +1,5 @@
 <?php
 
-//e($page[0]['static']);
-
     $count = count($page[0]['static']);
     $previous = $page[0]['pagination']['previous'];
     $next = $page[0]['pagination']['next'];
