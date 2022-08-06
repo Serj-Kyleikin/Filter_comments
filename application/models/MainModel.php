@@ -11,9 +11,10 @@ class MainModel extends Model {
 
     public function getMain($info) {
 
-        $result['pagination'] = $this->setPagination($info['url'], $info['pagination']);
+        // Параметры пагинации
 
-        $from = ($info['pagination'] == 1) ? 0 : ($info['pagination'] - 1) * $this->pagination;
+        $result['pagination'] = $info['pagination'];
+        $from = ($info['pagination']['this'] == 1) ? 0 : ($info['pagination']['this'] - 1) * $this->pagination;
 
         // Статьи
 
@@ -28,7 +29,7 @@ class MainModel extends Model {
         } catch(\PDOException $e) {
             logError($e, 1);
         }
-        
+
         if($result['static']) {
 
             // Поиск первой статьи из БД в выдаче
@@ -58,7 +59,7 @@ class MainModel extends Model {
         } else {
 
             if(!$from) $result['pagination']['next'] = false;       // Нет записей для первой страницы в пагинации
-            else $result['static']['empty'] = true;                 // Отсутствуют данные для пагинации
+            else $result['empty'] = true;                           // Отсутствуют данные для пагинации
         }
 
         return $result;
