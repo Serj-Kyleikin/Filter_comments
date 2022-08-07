@@ -2,6 +2,7 @@
 
     $count = count($page[0]['static']);
 
+    $icons = $this->icons['page'];
     $previous = $page[0]['pagination']['previous'];
     $next = $page[0]['pagination']['next'];
 ?>
@@ -29,7 +30,7 @@
                 <div class="comments_filter">
                     <form method="post" action="javascript:showFiltered(<?= $article['id']; ?>)" autocomplete="off">
                         <input type="text" name="filter" id="filter_<?= $article['id']; ?>" oninput="filterComments(<?= $article['id']; ?>, this.value.length)" placeholder="Фильтр по имени автора">
-                        <button name="submit" type="submit"></button>
+                        <button name="submit" type="submit"><img width="24" height="24" src="<?= $icons['search'];?>"></button>
                     </form>
                 </div>
                 <div class="comments_show">
