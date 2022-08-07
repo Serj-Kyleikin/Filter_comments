@@ -101,12 +101,14 @@
     height: 33px;
     margin-left: 5px;
     padding:0;
-    background: url('/public/screenshots/icons/search.png') center center no-repeat;
-    background-size: 20px 20px; 
     cursor: pointer;
+    background: none;
+}
+.comments_filter button > img {
+    margin-left: 10px;
 }
 .comments_filter button:hover {
-    background-size: 23px 23px;
+    transform: scale(1.02);
 }
 
 .comments_hints {
